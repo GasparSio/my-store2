@@ -1,28 +1,53 @@
 const express = require('express')
-const { faker } = require('@faker-js/faker')
+const ProductsService = require('../services/productsService')
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  const productos = [];
-  const { limit } = req.query;
-  const size = limit || 10;
-  for (let i=0; i<size; i++) {
-    productos.push({
-      name: faker.commerce.productName(),
-      price: parseInt(faker.commerce.price()),
-      image: faker.image.imageUrl()
+//creamos las instancias de las clases que usaremos
+const service = new ProductsService();
+
+router.get('/', async (req, res) => {
+  const productos = await service.findAll();
+  res.status(200).json(productos)
+});
+
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  const product = await service.findOne(id);
+  res.status(200).json(product)
+});
+
+router.post('/', async (req, res) => {
+  const body = req.body;
+  const newProduct = await service.create(body);
+  res.status(201).json({
+    message: 'created',
+    data: newProduct
+  })
+}
+);
+
+router.patch('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const body = req.body;
+    const product = await service.update(id, body)
+    res.json({
+    message: 'updated',
+    data: product
+    })
+  } catch (error) {
+    res.status(404).json({
+      message: error.message
     })
   }
-  res.json(productos)
-})
-router.get('/:id', (req, res) => {
+});
+
+router.delete('/:id', async (req, res) => {
   const { id } = req.params;
-  res.json({
-    id,
-    name: 'Producto 1',
-    precio: 25
-  })
-})
+  const rta = await service.delete(id);
+  res.status(200).json(rta)
+});
+
 
 module.exports = router;
